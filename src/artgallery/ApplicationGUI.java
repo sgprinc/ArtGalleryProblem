@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import javax.swing.Box;
@@ -332,7 +333,7 @@ public class ApplicationGUI implements Runnable {
 	}
 
 	private void loadInput() {
-		String directory = System.getProperty("user.dir") + "/bin/sampleInputs/";
+		String directory = Paths.get(System.getProperty("user.dir"), "data/sampleInputs/").toString();
 		String file = "AGS2";
 		BufferedReader br = null;
 		String line = "";
@@ -346,7 +347,7 @@ public class ApplicationGUI implements Runnable {
 		// Load Gallery Structure File
 		try {
 			txtAreaStatus.append("Attempting to load gallery file...\n");
-			br = new BufferedReader(new FileReader(directory + file));
+			br = new BufferedReader(new FileReader(Paths.get(directory, file).toString()));
 			int count = 1;
 			int n, h, e, a;
 			int g, v, t, d;
@@ -425,7 +426,7 @@ public class ApplicationGUI implements Runnable {
 		file = "GSS1";
 		try {
 			txtAreaStatus.append("Attempting to load guard schedule specification file...\n");
-			br = new BufferedReader(new FileReader(directory + file));
+			br = new BufferedReader(new FileReader(Paths.get(directory, file).toString()));
 			int count = 1;
 			int g = 0;
 			int currentGuard = -1;
@@ -480,7 +481,7 @@ public class ApplicationGUI implements Runnable {
 		file = "RPS1";
 		try {
 			txtAreaStatus.append("Attempting to load thief path specification file...\n");
-			br = new BufferedReader(new FileReader(directory + file));
+			br = new BufferedReader(new FileReader(Paths.get(directory, file).toString()));
 			int count = 1;
 
 			while ((line = br.readLine()) != null) {
