@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import javax.swing.Box;
@@ -333,15 +334,19 @@ public class ApplicationGUI implements Runnable {
 		executionBtnsPanel.add(btnRestart);
 	}
 
+	private static String paths(final String first, final String... more) {
+		return Paths.get(first, more).toString();
+	}
+
 	private void loadInput() {
-		String directory = System.getProperty("user.dir") + "/bin/sampleInputs/";
+		String directory = paths(System.getProperty("user.dir"), "data/sampleInputs/");
 		JFileChooser fileChooser = new JFileChooser(directory);
 		BufferedReader br = null;
 		String line = "";
 		String separator = ",";
 		int lastHole = 0;
 		int lastIndex = 0;
-		
+
 		//Array to add up objects while reading and later initialize the gallery.
 		ArrayList<Vertex> vertices = new ArrayList<Vertex>();
 		ArrayList<Hole> holes = new ArrayList<Hole>();
@@ -350,14 +355,14 @@ public class ApplicationGUI implements Runnable {
 
 		// Load Gallery Structure File
 		//if (fileChooser.showOpenDialog(fileChooser) == JFileChooser.APPROVE_OPTION) {
-		if(true) {
+		if (true) {
 			//String fileName = fileChooser.getSelectedFile().getName();
 			//fileNumber = fileName.charAt(fileName.length() - 1);
 			String fileName = "AGS6";
 			char fileNumber = '6';
 			try {
 				txtAreaStatus.append("Attempting to load gallery file [" + directory + fileName + "]\n");
-				br = new BufferedReader(new FileReader(directory + fileName));
+				br = new BufferedReader(new FileReader(paths(directory, fileName)));
 				int count = 1;
 				int n, h, e, a;
 				int g, v, t, d;
@@ -365,7 +370,7 @@ public class ApplicationGUI implements Runnable {
 
 				while ((line = br.readLine()) != null) {
 					String[] values = line.replaceAll(" ", "").split(separator);
-					if (count == 1) {						
+					if (count == 1) {
 						if (values.length != 4) {
 							throw new IllegalArgumentException();
 						}
@@ -406,7 +411,7 @@ public class ApplicationGUI implements Runnable {
 						Vertex tempVertex = new Vertex(Integer.parseInt(values[0]), Integer.parseInt(values[1]),
 								count - 3, Integer.parseInt(values[2]), 0);
 						hole.addVertex(tempVertex);
-						
+
 					}
 					count++;
 				}
@@ -433,7 +438,7 @@ public class ApplicationGUI implements Runnable {
 			// Load Guard Schedule File
 			try {
 				txtAreaStatus.append("Attempting to load guard schedule specification file...\n");
-				br = new BufferedReader(new FileReader(directory + "GSS" + fileNumber));
+				br = new BufferedReader(new FileReader(paths(directory, "GSS" + fileNumber)));
 				int count = 1;
 				int g = 0;
 				int currentGuard = -1;
@@ -487,7 +492,7 @@ public class ApplicationGUI implements Runnable {
 			// Load Thief Path File
 			try {
 				txtAreaStatus.append("Attempting to load thief path specification file...\n");
-				br = new BufferedReader(new FileReader(directory + "RPS" + fileNumber));
+				br = new BufferedReader(new FileReader(paths(directory, "RPS" + fileNumber)));
 				int count = 1;
 
 				while ((line = br.readLine()) != null) {
@@ -522,7 +527,7 @@ public class ApplicationGUI implements Runnable {
 				}
 			}
 		}
-		
+
 		refreshCanvas();
 		resetControls();
 		enableControls();
@@ -639,23 +644,23 @@ public class ApplicationGUI implements Runnable {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			switch (type) {
-			case "actors":
-				gallery.toggleActors();
-				break;
-			case "guard":
-				gallery.toggleGuardsPaths();
-				break;
-			case "legend":
-				break;
-			case "thief":
-				gallery.toggleThievesPaths();
-				break;
-			case "triangulation":
-				gallery.toggleTriangulation();
-				break;
-			case "visibility":
-				gallery.toggleVisibility();
-				break;
+				case "actors":
+					gallery.toggleActors();
+					break;
+				case "guard":
+					gallery.toggleGuardsPaths();
+					break;
+				case "legend":
+					break;
+				case "thief":
+					gallery.toggleThievesPaths();
+					break;
+				case "triangulation":
+					gallery.toggleTriangulation();
+					break;
+				case "visibility":
+					gallery.toggleVisibility();
+					break;
 			}
 			canvas.repaint();
 		}
