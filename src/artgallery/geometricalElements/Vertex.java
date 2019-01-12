@@ -3,38 +3,50 @@ package artgallery.geometricalElements;
 import java.util.ArrayList;
 
 public class Vertex implements Comparable<Vertex> {
-	private int id;
+	// Basic vertex properties. 
+	private String id;
 	private double X;
 	private double Y;
 	private boolean art;
 	private boolean exit;
+	
+	// List of edges "coming into" this vertex.
+	private ArrayList<Edge> inEdges = new ArrayList<Edge>();
+	// List of edges "coming out of" this vertex.
+	private ArrayList<Edge> outEdges = new ArrayList<Edge>();
+	// List of neighboring vertices for checks without edge-importance.
 	private ArrayList<Vertex> neighbors = new ArrayList<Vertex>();
+	// Polygon object containing all that is visible from the given vertex.
 	private ArrayList<Polygon> visibilityPolygon = new ArrayList<Polygon>();
-
+	
+	// Constructors
 	public Vertex() {
-	}
-
-	public Vertex(double x, double y) {
-		this.setId(-1);
-		this.X = x;
-		this.Y = y;
 		this.setArt(false);
 		this.setExit(false);
 	}
 
-	public Vertex(double x, double y, int id, int artFlag, int exitFlag) {
-		this.X = x;
-		this.Y = y;
+	public Vertex(double x, double y) {
+		this.setId("("+(int)x+":"+(int)y+")");
+		this.setX(x);
+		this.setY(y);
+		this.setArt(false);
+		this.setExit(false);
+	}
+
+	public Vertex(double x, double y, String id, int artFlag, int exitFlag) {
 		this.setId(id);
+		this.setX(x);
+		this.setY(y);
 		this.setArt(artFlag == 1 ? true : false);
 		this.setExit(exitFlag == 1 ? true : false);
 	}
 
-	public int getId() {
+	// Basic property setters and accessors.	
+	public String getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
@@ -68,8 +80,51 @@ public class Vertex implements Comparable<Vertex> {
 
 	public void setExit(boolean exit) {
 		this.exit = exit;
+	}	
+
+	public Edge getInEdge(int i) {
+		if(this.inEdges.size() > i) {
+			return inEdges.get(i);
+		}
+		return null;
+	}
+	
+	public void addInEdge(Edge e) {
+		if(!this.inEdges.contains(e)) {
+			this.inEdges.add(e);
+		}		
 	}
 
+	public void setInEdges(ArrayList<Edge> inEdges) {
+		this.inEdges = inEdges;
+	}
+
+
+	public boolean isInEdge(Edge e) {
+		return this.inEdges.contains(e);
+	}
+	
+	public Edge getEdgeOut(int i) {
+		if(this.outEdges.size() > i) {
+			return outEdges.get(i);
+		}
+		return null;
+	}
+
+	public void addOutEdge(Edge e) {
+		if(!this.outEdges.contains(e)) {
+			this.outEdges.add(e);
+		}
+	}
+	
+	public void setOutEdges(ArrayList<Edge> outEdges) {
+		this.outEdges = outEdges;
+	}
+	
+	public boolean isOutEdge(Edge e) {
+		return this.outEdges.contains(e);
+	}
+	
 	public void addNeighbor(Vertex n) {
 		if (!neighbors.contains(n)) {
 			neighbors.add(n);
@@ -102,7 +157,11 @@ public class Vertex implements Comparable<Vertex> {
 		this.visibilityPolygon = visibilityPolygon;
 	}
 	
+	// Overridden functions from the Object class and interface methods to provide comparisons and printability.
+	
 	@Override
+	// Overridden function to compare vertices on their coordinates rather than on object hashes.
+	// X & Y can be deemed equal if they fall within an arbitrary tolerance to account for floating point error.
 	public boolean equals(Object o) {
 		if(o instanceof Vertex) {
 			if(Math.abs(this.X - ((Vertex) o).getX()) < 0.01 && Math.abs(this.Y - ((Vertex) o).getY()) < 0.01) {
@@ -113,6 +172,7 @@ public class Vertex implements Comparable<Vertex> {
 	}
 	
 	@Override
+	// Might need revision to ensure the correct orders are yielded
 	public int compareTo(Vertex o) {
 		if (this.equals(o)) {
 			return 0;
@@ -122,13 +182,16 @@ public class Vertex implements Comparable<Vertex> {
 	}
 	
 	@Override
+	// Returns a cloned vertex, preserving only it's basic properties (i.e. no neighbors or in/out edges) due to deep-copying issues.
 	public Vertex clone(){
 		Vertex clone = new Vertex(this.X, this.Y, this.id, this.art == true? 1: 0, this.exit == true ? 1: 0);
 		return clone;
 	}
 	
 	@Override
+	// Simple method to obtain a readable representation of the vertex for labeling purposes.
 	public String toString() {
 		return "("+this.getX()+":"+this.getY()+")";
 	}
+
 }

@@ -92,8 +92,7 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 			// If selected, display the triangles from the gallery polygon
 			// triangulation.
 			if (gallery.showTriangulation()) {
-				gallery.getGallery().computeTriangulation();
-				drawTriangulation(g2d, gallery.getGallery().getTriangulation());				
+				drawTriangulation(g2d, gallery.getGallery().computeTriangulation());				
 			}
 
 			// If selected, display the visibility polygon of the guards.
@@ -158,10 +157,10 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 			}
 			
 			for(Edge e : this.gallery.getTrapezoidalEdges()) {
-				drawVertex(g2d, e.getFirstVertex(), 4, Color.MAGENTA);
-				drawVertex(g2d, e.getSecondVertex(), 4, Color.MAGENTA);
+				drawVertex(g2d, e.getStartVertex(), 4, Color.MAGENTA);
+				drawVertex(g2d, e.getEndVertex(), 4, Color.MAGENTA);
 				drawEdge(g2d, e, 1, Color.MAGENTA);
-				drawEdgeLabel(g2d, e.getMidpoint(), Color.MAGENTA);
+				drawLabel(g2d, e.getMidpoint(), e.toString(), Color.MAGENTA);
 			}
 
 			if (gallery.showLegend()) {
@@ -197,19 +196,19 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 	}
 
 	private void drawEdge(Graphics2D g2d, Edge e, int t, Color c) {
-		Vertex v1 = e.getFirstVertex();
-		Vertex v2 = e.getSecondVertex();
+		Vertex v1 = e.getStartVertex();
+		Vertex v2 = e.getEndVertex();
 		c = c != null ? c : new Color(220, 220, 220, 127);
 		g2d.setColor(c);
 		g2d.setStroke(new BasicStroke(t));
 		g2d.draw(new Line2D.Double(v1.getX(), v1.getY(), v2.getX(), v2.getY()));
 	}
-	private void drawEdgeLabel(Graphics2D g2d, Vertex v, Color c) {
+	private void drawLabel(Graphics2D g2d, Vertex v, String text, Color c) {
 		c = c != null ? c : new Color(220, 220, 220, 127);
 		g2d.setColor(c);
-		g2d.scale(1, -1);
-		g2d.drawString(v.getId()+"", (float) (v.getX()-8), (float) (-v.getY()-6));
-		g2d.scale(1, -1);
+		g2d.scale(0.5, -0.5);		
+		g2d.drawString(text, (float) (v.getX()- text.length()) * 2 - 5, (float) (-v.getY()-6) * 2 - 5);
+		g2d.scale(2, -2);
 	}
 	private void drawHole(Graphics2D g2d, Hole hole) {
 		for (Edge e : hole.getEdges()) {
@@ -248,24 +247,14 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 	}
 
 	private void drawTriangulation(Graphics2D g2d, ArrayList<artgallery.geometricalElements.Polygon> triangulation) {
-		for (artgallery.geometricalElements.Polygon p : triangulation) {
-			int vertexSize = 4;
-			Vertex v = new Vertex(p.getCentroid()[0], p.getCentroid()[1]);
-			drawVertex(g2d, v, vertexSize, Color.GREEN);
-			for (Edge e : p.getEdges()) {
+		for (int i = 0 ; i < triangulation.size() ; ++i) {
+			Vertex v = new Vertex(triangulation.get(i).getCentroid()[0], triangulation.get(i).getCentroid()[1]);
+			
+			drawLabel(g2d, v, ""+(i+1), Color.GREEN);
+			for (Edge e : triangulation.get(i).getEdges()) {
 				drawEdge(g2d, e, 2, new Color(0, 255, 0));
 			}
 		}
-
-		/*
-		 * //Delete for (Vertex vertex: gallery.getGallery().getVertices()){
-		 * drawVertex(g2d, vertex, 12, null); g2d.scale(1, -1);
-		 * g2d.drawString("" +
-		 * gallery.getTriangulationVertices().indexOf(vertex),
-		 * (float)vertex.getX() - 4, -(float)vertex.getY() - 15); g2d.scale(1,
-		 * -1); }
-		 */
-
 	}
 
 	private void drawGuard(Graphics2D g2d, Guard guard) {
@@ -326,18 +315,18 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 		int dx = (int) (endDrag.getX() - startDrag.getX());
 		int dy = (int) (endDrag.getY() - startDrag.getY());
 
-		if (offsetX + dx > getSize().getWidth() / 3) {
-			offsetX = (int) (getSize().getWidth() / 3);
-		} else if (offsetX + dx < -getSize().getWidth() / 3) {
-			offsetX = (int) (-getSize().getWidth() / 3);
+		if (offsetX + dx > getSize().getWidth() / 2) {
+			offsetX = (int) (getSize().getWidth() / 2);
+		} else if (offsetX + dx < -getSize().getWidth() / 2) {
+			offsetX = (int) (-getSize().getWidth() / 2);
 		} else {
 			offsetX += dx;
 		}
 
-		if (offsetY + dy > getSize().getHeight() / 3) {
-			offsetY = (int) (getSize().getHeight() / 3);
-		} else if (offsetY + dy < -getSize().getHeight() / 3) {
-			offsetY = (int) (-getSize().getHeight() / 3);
+		if (offsetY + dy > getSize().getHeight() / 2) {
+			offsetY = (int) (getSize().getHeight() / 2);
+		} else if (offsetY + dy < -getSize().getHeight() / 2) {
+			offsetY = (int) (-getSize().getHeight() / 2);
 		} else {
 			offsetY += dy;
 		}
@@ -352,9 +341,9 @@ public class GalleryView extends JPanel implements MouseListener, MouseMotionLis
 	
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		scale -= (double) (e.getWheelRotation()) / 10;
-		if (scale > 4) scale = 4;
-		if (scale < 0.25) scale = 0.25;
+		scale -= (double) (e.getWheelRotation()) / 5;
+		if (scale > 5) scale = 5;
+		if (scale < 0.2) scale = 0.2;
 		repaint();
 	}
 

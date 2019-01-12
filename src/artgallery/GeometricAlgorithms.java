@@ -2,15 +2,15 @@ package artgallery;
 
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
 import artgallery.dataStructures.AVLTree;
 import artgallery.geometricalElements.Edge;
+import artgallery.geometricalElements.Hole;
 import artgallery.geometricalElements.Polygon;
 import artgallery.geometricalElements.Vertex;
 
@@ -44,8 +44,10 @@ public final class GeometricAlgorithms {
 		return triangulation;
 	}
 
-	// Not implemented - for now simply returning the full polygon as a
-	// "trapezoid".
+	// Not fully implemented - for now simply setting the global list of
+	// trapezoidal edges
+	// for display debugging purposes.
+
 	public ArrayList<Polygon> trapezoidalDecomposition(Polygon fullPolygon) {
 		ArrayList<Polygon> trapezoids = new ArrayList<Polygon>();
 		ArrayList<Vertex> polygonVertices = fullPolygon.getVerticesAndHoles();
@@ -61,50 +63,73 @@ public final class GeometricAlgorithms {
 					new Vertex((int) (Math.ceil(fullPolygon.getMaxDistance())), vertex.getY()));
 
 			// Check for edge intersections
-			ArrayList<Vertex> intersections = new ArrayList<>();
+
+			PriorityQueue<Vertex> intersectionsLeft = new PriorityQueue<Vertex>(
+					(v1, v2) -> Double.compare(computeDistance(vertex, v1), computeDistance(vertex, v2)));
+			PriorityQueue<Vertex> intersectionsRight = new PriorityQueue<Vertex>(
+					(v1, v2) -> Double.compare(computeDistance(vertex, v1), computeDistance(vertex, v2)));
+
 			for (Edge edge : polygonEdges) {
 				Vertex intersection = getIntersectionPoint(sweepLine, edge);
-				if (intersection != null && !intersections.contains(intersection)) {
-					intersections.add(intersection);
+				// When a different, valid intersection occurs, store the
+				// intersection point
+				if (intersection != null && !intersection.equals(vertex)) {
+					if (intersection.getX() < vertex.getX()) {
+						intersectionsLeft.add(intersection);
+					} else if (intersection.getX() > vertex.getX()) {
+						intersectionsRight.add(intersection);
+					}
 				}
 			}
 
-			intersections.sort((v1, v2) -> Double.compare(v1.getX(), v2.getX()));
+			Vertex current = new Vertex(vertex.getX(), vertex.getY());
+			// Consider only the two closest ones, as the trapezoidal
+			if (intersectionsLeft.size() > 0) {
+				// Make a non-final edge to test whether it would be valid
+				Vertex intersection = intersectionsLeft.poll();
+				Edge tempEdge = new Edge(intersection, current);
 
-			for (int i = 0; i < intersections.size() - 1; ++i) {
-				Vertex i1 = intersections.get(i);
-				Vertex i2 = intersections.get(i + 1);
-				Edge tempEdge = new Edge(i1, i2);
+				// Check if the middlepoint of said edge is within the polygon
 				if (insidePolygon(tempEdge.getMidpoint(), fullPolygon)) {
-					boolean isStructure1 = polygonVertices.contains(i1);
-					boolean isStructure2 = polygonVertices.contains(i2);
-
+					intersection = fullPolygon.getMatchingVertex(intersection) == null ? intersection
+							: fullPolygon.getMatchingVertex(intersection);
 					// Check if the midpoint is inside the polygon
-					if (isStructure1 && isStructure2) {
-						Vertex s1 = fullPolygon.getMatchingVertex(i1);
-						Vertex s2 = fullPolygon.getMatchingVertex(i2);
-						if (!s1.isNeighbor(s2)) {
+					if (!vertex.isNeighbor(intersection)) {
+						if (!trapezoidalEdges.contains(tempEdge)) {
 							trapezoidalEdges.add(tempEdge);
 						}
-					} else if ((isStructure1 || isStructure2)) {
-						trapezoidalEdges.add(tempEdge);
-					} else {
-						trapezoidalEdges.add(tempEdge);
 					}
 				}
+			}
 
+			if (intersectionsRight.size() > 0) {
+				// Make a non-final edge to test whether it would be valid
+				Vertex intersection = intersectionsRight.poll();
+				Edge tempEdge = new Edge(current, intersection);
+
+				// Check if the middlepoint of said edge is within the polygon
+				if (insidePolygon(tempEdge.getMidpoint(), fullPolygon)) {
+					intersection = fullPolygon.getMatchingVertex(intersection) == null ? intersection
+							: fullPolygon.getMatchingVertex(intersection);
+					// Check if the midpoint is inside the polygon
+					if (!vertex.isNeighbor(intersection)) {
+						if (!trapezoidalEdges.contains(tempEdge)) {
+							trapezoidalEdges.add(tempEdge);
+						}
+					}
+				}
 			}
 		}
 
 		trapezoids.add(fullPolygon);
 		return trapezoids;
+
 	}
 
-	// Not implemented - for now simply returning the full polygon as a
-	// "trapezoid".
+	// Not implemented - for now simply returning an empty list
 	private ArrayList<Polygon> monotonePolygonization(ArrayList<Polygon> trapezoid) {
 		ArrayList<Polygon> monotonePolygons = new ArrayList<Polygon>();
-		monotonePolygons.addAll(trapezoid);
+
 		return monotonePolygons;
 	}
 
@@ -129,9 +154,8 @@ public final class GeometricAlgorithms {
 		// Begin generating the internal edges
 		for (int j = 2; j < triangulationVertices.size() - 1; ++j) {
 			Vertex uj = triangulationVertices.get(j);
-			// System.out.println(triangulationVertices.indexOf(s.peek())+ " is
-			// neighbor of "+ triangulationVertices.indexOf(uj) + " : " +
-			// s.peek().isNeighbor(uj));
+
+			// HERE IS WHERE THE CHAIN CHECK SHOULD BE ADDED <---
 			if (!s.peek().isNeighbor(uj)) {
 				while (s.size() > 1) {
 					Vertex v = s.pop();
@@ -165,16 +189,15 @@ public final class GeometricAlgorithms {
 	}
 
 	// Iterates through all of the loose edges in the list and attempts to put
-	// together triangles by matching their vertices.
-	// Unfortunately O(n^3) as all edges have to be checked in each of the
-	// levels required (triangles = 3 levels).
-	// Perhaps could be improved through filtering, a better algorithm, or
-	// better usage of references later on.
+	// together triangles by matching their vertices. Unfortunately O(n^3) as
+	// all edges have to be checked in each of the levels required (triangles =
+	// 3 levels). Perhaps could be improved through filtering, a better
+	// algorithm, or better usage of references later on.
 	private ArrayList<Polygon> constructTriangles(ArrayList<Edge> edges) {
 		ArrayList<Polygon> triangles = new ArrayList<Polygon>();
 
 		for (Edge firstEdge : edges) {
-			Vertex firstVertex = firstEdge.getFirstVertex();
+			Vertex firstVertex = firstEdge.getStartVertex();
 			for (Edge secondEdge : edges) {
 				if (!secondEdge.equals(firstEdge) && secondEdge.containsVertex(firstVertex)) {
 					Vertex secondVertex = secondEdge.getOtherVertex(firstVertex);
@@ -189,9 +212,9 @@ public final class GeometricAlgorithms {
 
 								Polygon triangle = new Polygon(triangleEdges);
 
-								if (!triangles.stream().anyMatch(t -> t.edgeMatch(triangle))) {
-									System.out.println("Adding triangle: " + firstEdge.getId() + " - "
-											+ secondEdge.getId() + " - " + thirdEdge.getId());
+								if (!triangles.stream().anyMatch(t -> t.equals(triangle))) {
+									System.out.println("Adding triangle: " + firstEdge.toString() + " - "
+											+ secondEdge.toString() + " - " + thirdEdge.toString());
 									triangles.add(triangle);
 								}
 							}
@@ -203,6 +226,8 @@ public final class GeometricAlgorithms {
 		return triangles;
 	}
 
+	// Simple visibility algorithm based on testing each vertex around the viewpoint.
+	// Not finished and somewhat buggy on edge-cases.
 	public ArrayList<Polygon> computeVisibilityPolygon(Vertex viewPoint, Polygon p) {
 		// Array of triangles comprising the visibility polygon
 		ArrayList<Polygon> visiblePolygons = new ArrayList<Polygon>();
@@ -256,9 +281,10 @@ public final class GeometricAlgorithms {
 	 * M. Berg , page 328. Input: Point P, set of polygonal obstacles S. Output:
 	 * The set of visible vertices from P.
 	 */
+	// Not currently working and the subroutine wasn't implemented.
 	private ArrayList<Vertex> visibleVertices(Vertex v, Polygon p) {
 		// 1) Sort the obstacle vertices according to the clockwise angle that
-		// the halfline from p to each vertex makes with the positive x-axis.
+		// the half-line from p to each vertex makes with the positive x-axis.
 		ArrayList<Vertex> obstacleVertices = p.getVerticesAndHoles();
 		obstacleVertices.sort((v1, v2) -> compareAngleAndProximity(v, v1, v2));
 
@@ -314,20 +340,16 @@ public final class GeometricAlgorithms {
 	 * from P.
 	 */
 	private boolean isVisible(ArrayList<Vertex> w, int i) {
-		/*
-		 * if() {
-		 * 
-		 * return false; }else if(i == 0 || w.get(i - 1)) {
-		 * 
-		 * }
-		 */
+		//Not currently implemented as I switched to a simpler algorithm.
 		return true;
 	}
 
+	// Computes simple euclidian distance between two vertices.
 	private double computeDistance(Vertex v1, Vertex v2) {
 		return Math.sqrt(Math.pow(v1.getY() - v2.getY(), 2) + Math.pow((v1.getX() - v2.getX()), 2));
 	}
 
+	// Computes the CounterClockWise angle with respect to the X-Axis between two vertices.
 	private double computeCCWAngle(Vertex v, Vertex reference) {
 		double deltaX = v.getX() - reference.getX();
 		double deltaY = v.getY() - reference.getY();
@@ -338,7 +360,7 @@ public final class GeometricAlgorithms {
 	}
 
 	// Comparison based on the angle
-	// If the angles match (colinear) then prioritize the vertex closed to the
+	// If the angles match (colinear) then prioritize the vertex closer to the
 	// reference.
 	public int compareAngleAndProximity(Vertex reference, Vertex v1, Vertex v2) {
 		int result = Double.compare(computeCCWAngle(v1, reference), computeCCWAngle(v2, reference));
@@ -349,17 +371,20 @@ public final class GeometricAlgorithms {
 		}
 		return result;
 	}
-
+	
+	
+	// Finds the intersection point between two edges (or null if there is none)
+	//and returns it as a new Vertex.
 	private Vertex getIntersectionPoint(Edge e1, Edge e2) {
-		double x1 = e1.getFirstVertex().getX();
-		double y1 = e1.getFirstVertex().getY();
-		double x2 = e1.getSecondVertex().getX();
-		double y2 = e1.getSecondVertex().getY();
+		double x1 = e1.getStartVertex().getX();
+		double y1 = e1.getStartVertex().getY();
+		double x2 = e1.getEndVertex().getX();
+		double y2 = e1.getEndVertex().getY();
 
-		double x3 = e2.getFirstVertex().getX();
-		double y3 = e2.getFirstVertex().getY();
-		double x4 = e2.getSecondVertex().getX();
-		double y4 = e2.getSecondVertex().getY();
+		double x3 = e2.getStartVertex().getX();
+		double y3 = e2.getStartVertex().getY();
+		double x4 = e2.getEndVertex().getX();
+		double y4 = e2.getEndVertex().getY();
 
 		double ax = x2 - x1;
 		double ay = y2 - y1;
@@ -369,7 +394,13 @@ public final class GeometricAlgorithms {
 		double denominator = ax * by - ay * bx;
 
 		if (denominator == 0)
-			return null;
+			if (e1.getStartVertex().equals(e2.getStartVertex()) || e1.getStartVertex().equals(e2.getEndVertex())) {
+				return e1.getStartVertex();
+			} else if (e1.getEndVertex().equals(e2.getStartVertex()) || e1.getEndVertex().equals(e2.getEndVertex())) {
+				return e1.getEndVertex();
+			} else {
+				return null;
+			}
 
 		double cx = x3 - x1;
 		double cy = y3 - y1;
@@ -385,31 +416,35 @@ public final class GeometricAlgorithms {
 		Vertex intersection = new Vertex((x1 + t * ax), (y1 + t * ay));
 		return intersection;
 	}
-
+	
+	// Computes the distance between a vertex "v" and the intersection point of two edges "e1" and "e2".
+	// Useful to discern what intersections in a sweep-line are closed to the origin point. 
 	private double getIntersectionDistance(Vertex v, Edge e1, Edge e2) {
 		double x1, x2, x3, x4, y1, y2, y3, y4;
 
-		x1 = e1.getFirstVertex().getX();
-		y1 = e1.getFirstVertex().getY();
-		x2 = e1.getSecondVertex().getX();
-		y2 = e1.getSecondVertex().getY();
-		x3 = e2.getFirstVertex().getX();
-		y3 = e2.getFirstVertex().getY();
-		x4 = e2.getSecondVertex().getX();
-		y4 = e2.getSecondVertex().getY();
+		x1 = e1.getStartVertex().getX();
+		y1 = e1.getStartVertex().getY();
+		x2 = e1.getEndVertex().getX();
+		y2 = e1.getEndVertex().getY();
+		x3 = e2.getStartVertex().getX();
+		y3 = e2.getStartVertex().getY();
+		x4 = e2.getEndVertex().getX();
+		y4 = e2.getEndVertex().getY();
 
 		double x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4))
 				/ ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
 		double y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4))
 				/ ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
-
 		return Math.sqrt(Math.pow(y - v.getY(), 2) + Math.pow((x - v.getX()), 2));
 	}
 
+	// Given an origin point "v" and a segment "e" coming out of it, compare the distance from said point
+	// to the intersection points of two other segments with said segment.
 	private int compareIntersectionDistance(Vertex v, Edge e, Edge e1, Edge e2) {
 		return Double.compare(getIntersectionDistance(v, e, e1), getIntersectionDistance(v, e, e2));
 	}
 
+	// Computes a bounding box - Not currently used but might be useful at some point.
 	private Polygon computeBoundingBox(Polygon p) {
 		double minX, minY, maxX, maxY;
 		minX = minY = Integer.MAX_VALUE;
@@ -433,21 +468,24 @@ public final class GeometricAlgorithms {
 		Polygon boundingBox = new Polygon(vertices);
 		return boundingBox;
 	}
-
+	
+	// Uses the Java AWT.Polygon class to check whether a point falls within a polygon.
+	// First considers the bounding polygon, and subsequently checks for each hole polygon.
 	private boolean insidePolygon(Vertex v, Polygon p) {
-		ArrayList<Vertex> intersections = new ArrayList<>();
-		Edge line = new Edge(v, new Vertex(p.getMaxDistance(), v.getY()));
-		for (Edge edge : p.getEdges()) {
-			Vertex intersectionPoint = getIntersectionPoint(line, edge);
-			if (intersectionPoint != null && !intersections.contains(intersectionPoint)) {
-				intersections.add(intersectionPoint);
-			}
+		java.awt.Polygon polygon = new java.awt.Polygon();
+		p.getVertices().forEach(i -> polygon.addPoint((int) (i.getX()), (int) (i.getY())));
+
+		// Construct the "hole" polygons.
+		ArrayList<java.awt.Polygon> holes = new ArrayList<java.awt.Polygon>();
+		for (Hole h : p.getHoles()) {
+			java.awt.Polygon hole = new java.awt.Polygon();
+			h.getVertices().forEach(i -> hole.addPoint((int) (i.getX()), (int) (i.getY())));
+			holes.add(hole);
 		}
-		System.out.println(intersections.size() + " at " + v.getY());
-		if (intersections.size() % 2 == 1) {
-			return true;
-		}
-		return false;
+		boolean inHole = holes.stream().anyMatch(h -> h.contains(v.getX(), v.getY()));
+		
+		// If the point is inside the main polygon, and inside no hole, then return true.
+		return polygon.contains((v.getX()), (v.getY())) && !inHole;
 	}
 
 	private boolean areColinear(Vertex v1, Vertex v2, Vertex v3) {

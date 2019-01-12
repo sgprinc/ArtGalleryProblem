@@ -3,64 +3,74 @@ package artgallery.geometricalElements;
 import java.util.ArrayList;
 
 public class Edge implements Comparable<Edge> {
-	private String id;
-	private int length;
-	private Vertex firstVertex;
-	private Vertex secondVertex;
+	// Basic vertex properties.
+	private Vertex startVertex;
+	private Vertex endVertex;
+	
+	// List of neighboring edges for checks without edge-importance.
 	private ArrayList<Edge> neighbors = new ArrayList<Edge>();
+	
+	private Edge next, prev;
 
+	// Constructors
 	public Edge() {
-		setFirstVertex(new Vertex());
-		setSecondVertex(new Vertex());
+		setStartVertex(new Vertex());
+		setEndVertex(new Vertex());
+		setNext(null);
+		setPrev(null);
 	}
 
 	public Edge(Vertex v1, Vertex v2) {
-		setFirstVertex(v1);
-		setSecondVertex(v2);
-		setId(v1.getId() + "-" + v2.getId());
+		setStartVertex(v1);
+		setEndVertex(v2);
 		v1.addNeighbor(v2);
 		v2.addNeighbor(v1);
 	}
 
-	public String getId() {
-		return id;
+	// Basic property setters and accessors.
+	
+	public Vertex getStartVertex() {
+		return startVertex;
 	}
 
-	public void setId(String id) {
-		this.id = id;
+	public void setStartVertex(Vertex startVertex) {
+		this.startVertex = startVertex;
 	}
 
-	public double length() {
-		double length = Math.pow(firstVertex.getY() - secondVertex.getY(), 2)
-				+ Math.pow((firstVertex.getX() - secondVertex.getX()), 2);
-		return length;
+	public Vertex getEndVertex() {
+		return endVertex;
 	}
 
-	public Vertex getFirstVertex() {
-		return firstVertex;
+	public void setEndVertex(Vertex endVertex) {
+		this.endVertex = endVertex;
 	}
 
-	public void setFirstVertex(Vertex firstVertex) {
-		this.firstVertex = firstVertex;
-	}
-
-	public Vertex getSecondVertex() {
-		return secondVertex;
-	}
-
-	public void setSecondVertex(Vertex secondVertex) {
-		this.secondVertex = secondVertex;
-	}
-
+	// Returns the vertex in the edge that is not the specified one.
 	public Vertex getOtherVertex(Vertex v) {
 		if (this.containsVertex(v)) {
-			return firstVertex.equals(v) ? secondVertex : firstVertex;
+			return startVertex.equals(v) ? endVertex : startVertex;
 		}
 		return null;
 	}
+	
+	public Edge getNext() {
+		return next;
+	}
+
+	public void setNext(Edge next) {
+		this.next = next;
+	}
+
+	public Edge getPrev() {
+		return prev;
+	}
+
+	public void setPrev(Edge prev) {
+		this.prev = prev;
+	}
 
 	public boolean containsVertex(Vertex v) {
-		if (firstVertex.equals(v) || secondVertex.equals(v)) {
+		if (startVertex.equals(v) || endVertex.equals(v)) {
 			return true;
 		}
 		return false;
@@ -90,19 +100,28 @@ public class Edge implements Comparable<Edge> {
 		return false;
 	}
 	
+	// Returns a shallow Vertex object with Cartesian coordinates equal to the midpoint of the edge.
 	public Vertex getMidpoint() {
-		double midX = firstVertex.getX() + (secondVertex.getX() - firstVertex.getX()) / 2;
-		double midY = firstVertex.getY() + (secondVertex.getY() - firstVertex.getY()) / 2;
+		double midX = startVertex.getX() + (endVertex.getX() - startVertex.getX()) / 2;
+		double midY = startVertex.getY() + (endVertex.getY() - startVertex.getY()) / 2;
 		return new Vertex(midX, midY);
-	}
+	}	
 
+	// Returns the euclidian distance between the two defining vertices.
+	public double size() {
+		double length = Math.pow(startVertex.getY() - endVertex.getY(), 2)
+				+ Math.pow((startVertex.getX() - endVertex.getX()), 2);
+		return length;
+	}
+	
+
+	// Overridden functions from the Object class and interface methods to provide comparisons and printability.
+	
 	@Override
+	// Overridden function to compare edges on the equality of its vertices.
 	public boolean equals(Object o) {
-		if (!(o instanceof Edge)) {
-			return false;
-		}
 		if (o instanceof Edge) {
-			if (this.containsVertex(((Edge) o).getFirstVertex()) && this.containsVertex(((Edge) o).getSecondVertex())) {
+			if (this.containsVertex(((Edge) o).getStartVertex()) && this.containsVertex(((Edge) o).getEndVertex())) {
 				return true;
 			}
 		}
@@ -110,12 +129,20 @@ public class Edge implements Comparable<Edge> {
 	}
 
 	@Override
+	// Might need revision to ensure the correct orders are yielded
 	public int compareTo(Edge edge) {
 		if (this.equals(edge)) {
 			return 0;
 		} else {
-			return this.getId().compareTo(edge.getId());
+			return -1;
 		}
 	}
+	
+	@Override
+	// Simple method to obtain a readable representation of the edge for labeling purposes.
+	public String toString() {
+		return this.startVertex.toString() + this.endVertex.toString();
+	}
+
 
 }

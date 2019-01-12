@@ -81,7 +81,6 @@ public class ApplicationGUI implements Runnable {
 	public ApplicationGUI() {
 		initialize();
 		txtAreaStatus.append("Simulator started\n");
-		loadInput();
 	}
 
 	/**
@@ -349,12 +348,9 @@ public class ApplicationGUI implements Runnable {
 		ArrayList<Thief> thieves = new ArrayList<Thief>();
 
 		// Load Gallery Structure File
-		//if (fileChooser.showOpenDialog(fileChooser) == JFileChooser.APPROVE_OPTION) {
-		if(true) {
-			//String fileName = fileChooser.getSelectedFile().getName();
-			//fileNumber = fileName.charAt(fileName.length() - 1);
-			String fileName = "AGS6";
-			char fileNumber = '6';
+		if (fileChooser.showOpenDialog(fileChooser) == JFileChooser.APPROVE_OPTION) {
+			String fileName = fileChooser.getSelectedFile().getName();
+			char fileNumber = fileName.charAt(fileName.length() - 1);
 			try {
 				txtAreaStatus.append("Attempting to load gallery file [" + directory + fileName + "]\n");
 				br = new BufferedReader(new FileReader(directory + fileName));
@@ -394,7 +390,7 @@ public class ApplicationGUI implements Runnable {
 						}
 					} else if (count > 3 && count <= 3 + n) {
 						Vertex tempVertex = new Vertex(Integer.parseInt(values[0]), Integer.parseInt(values[1]),
-								count - 3, Integer.parseInt(values[2]), Integer.parseInt(values[3]));
+								""+(count - 3), Integer.parseInt(values[2]), Integer.parseInt(values[3]));
 						vertices.add(tempVertex);
 					} else {
 						Hole hole = holes.get(lastHole);
@@ -404,7 +400,7 @@ public class ApplicationGUI implements Runnable {
 							hole = holes.get(lastHole);
 						}
 						Vertex tempVertex = new Vertex(Integer.parseInt(values[0]), Integer.parseInt(values[1]),
-								count - 3, Integer.parseInt(values[2]), 0);
+								""+(count - 3), Integer.parseInt(values[2]), 0);
 						hole.addVertex(tempVertex);
 						
 					}
